@@ -1,0 +1,81 @@
+{
+  "analysis_info": {
+    "timestamp": "2025-08-13T12:47:12.518065",
+    "target_drug": "Drug_A",
+    "best_model": "Random Forest"
+  },
+  "model_performance": {
+    "Ridge": {
+      "test_r2": -0.19410164204228475,
+      "test_rmse": 2.51327526974912,
+      "cv_r2_mean": -0.17416047723930722,
+      "cv_r2_std": 0.12060202118354021
+    },
+    "Random Forest": {
+      "test_r2": 0.05130131507337732,
+      "test_rmse": 2.240183320742955,
+      "cv_r2_mean": -0.0057534245665809445,
+      "cv_r2_std": 0.04217941949215529
+    }
+  },
+  "biomarkers": {
+    "total_discovered": 100,
+    "by_type": {
+      "EXP": 51,
+      "MUT": 25,
+      "CNV": 24
+    },
+    "top_10": [
+      {
+        "feature": "EXP_GENE_0173",
+        "score": 24.302080519100095,
+        "feature_type": "EXP"
+      },
+      {
+        "feature": "EXP_GENE_0025",
+        "score": 23.580377155685156,
+        "feature_type": "EXP"
+      },
+      {
+        "feature": "EXP_GENE_0284",
+        "score": 13.479724554015112,
+        "feature_type": "EXP"
+      },
+      {
+        "feature": "EXP_GENE_1247",
+        "score": 13.088200127883631,
+        "feature_type": "EXP"
+      },
+      {
+        "feature": "CNV_CNV_GENE_0043",
+        "score": 12.610546903697736,
+        "feature_type": "CNV"
+      },
+      {
+        "feature": "CNV_CNV_GENE_0397",
+        "score": 12.497917218578841,
+        "feature_type": "CNV"
+      },
+      {
+        "feature": "EXP_GENE_0768",
+        "score": 11.760901321185989,
+        "feature_type": "EXP"
+      },
+      {
+        "feature": "MUT_MUT_GENE_0020",
+        "score": 10.220599196791849,
+        "feature_type": "MUT"
+      },
+      {
+        "feature": "EXP_GENE_0711",
+        "score": 9.695207184600628,
+        "feature_type": "EXP"
+      },
+      {
+        "feature": "EXP_GENE_0054",
+        "score": 9.607935355143008,
+        "feature_type": "EXP"
+      }
+    ]
+  }
+}

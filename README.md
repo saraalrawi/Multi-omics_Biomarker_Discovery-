@@ -1,0 +1,310 @@
+# Multi-omics Biomarker Discovery for Drug Response Prediction
+
+I worked on this side project during my time at the Institute of the Medical Biometry and Statistics - University of Freiburg, Medical Center. This project is a comprehensive computational framework for integrating genomics, transcriptomics, and pharmacogenomics data to predict drug response and discover biomarkers in cancer cell lines using the Genomics of Drug Sensitivity in Cancer (GDSC) database.
+
+## Abstract
+
+Cancer drug resistance remains a major challenge in precision oncology. This framework implements state-of-the-art machine learning approaches for multi-omics data integration to predict drug response and identify predictive biomarkers. By leveraging genomic alterations, gene expression profiles, and pharmacological data from the GDSC database, our pipeline enables systematic discovery of molecular determinants of drug sensitivity across diverse cancer types.
+
+## Pipeline Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                           GDSC Multi-omics Pipeline                             │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   GDSC Data     │    │   Genomics      │    │ Transcriptomics │
+│   Acquisition   │    │   (Mutations,   │    │ (Gene Expression│
+│                 │    │    CNV, MSI)    │    │   RNA-seq)      │
+└─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
+          │                      │                      │
+          ▼                      ▼                      ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Data Preprocessing                           │
+│  • Quality Control & Filtering                                  │
+│  • Normalization (Log2, Z-score)                                │
+│  • Missing Value Imputation                                     │
+│  • Outlier Detection & Removal                                  │
+└─────────────────────┬───────────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                Multi-omics Integration                          │
+│  • Early Fusion (Concatenation)                                 │
+│  • Intermediate Fusion (Kernel Methods)                         │
+│  • Late Fusion (Ensemble Methods)                               │
+│  • Feature Selection & Dimensionality Reduction                 │
+└─────────────────────┬───────────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              Drug Response Prediction                           │
+│  • Multiple ML Algorithms (Ridge, RF, XGBoost, NN)              │
+│  • Hyperparameter Optimization                                  │
+│  • Cross-validation & Model Selection                           │
+│  • Performance Evaluation                                       │
+└─────────────────────┬───────────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                Biomarker Discovery                              │
+│  • Stability Selection                                          │
+│  • Feature Importance Analysis                                  │
+│  • Statistical Validation                                       │
+│  • Clinical Relevance Assessment                                │
+└─────────────────────┬───────────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              Pathway Enrichment Analysis                        │
+│  • Over-representation Analysis (ORA)                           │
+│  • Gene Set Enrichment Analysis (GSEA)                          │
+│  • Pathway Database Integration (KEGG, Reactome, GO)            │
+│  • Network-based Analysis                                       │
+└─────────────────────┬───────────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────────┐
+│            Results Visualization & Interpretation               │
+│  • Interactive Dashboards                                       │
+│  • Biomarker Rankings                                           │
+│  • Pathway Networks                                             │
+│  • Clinical Decision Support                                    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Data Sources and Description
+
+### GDSC Database
+The Genomics of Drug Sensitivity in Cancer (GDSC) database is the largest public resource for drug sensitivity in cancer cell lines, maintained by the Wellcome Sanger Institute.
+
+**Website**: https://www.cancerrxgene.org/
+
+**Key Publications**:
+- Yang, W. et al. Genomics of Drug Sensitivity in Cancer (GDSC): a resource for therapeutic biomarker discovery in cancer cells. *Nucleic Acids Research* 41, D955-D961 (2013). [DOI: 10.1093/nar/gks1111](https://doi.org/10.1093/nar/gks1111)
+- Iorio, F. et al. A Landscape of Pharmacogenomic Interactions in Cancer. *Cell* 166, 740-754 (2016). [DOI: 10.1016/j.cell.2016.06.017](https://doi.org/10.1016/j.cell.2016.06.017)
+
+### Multi-omics Data Types
+
+#### 1. Pharmacological Data
+- **Drug Sensitivity Measurements**: IC50 (half-maximal inhibitory concentration), AUC (area under the curve), and LN_IC50 values
+- **Compound Library**: >400 anti-cancer compounds including FDA-approved drugs and experimental agents
+- **Cell Line Coverage**: >1000 human cancer cell lines representing diverse tissue types and molecular subtypes
+
+#### 2. Genomics Data
+- **Mutation Data**: Whole-exome sequencing (WES) variants including missense, nonsense, frameshift, and splice-site mutations
+- **Copy Number Variations (CNV)**: Genome-wide copy number profiles using PICNIC and ABSOLUTE algorithms
+- **Microsatellite Instability (MSI)**: MSI status classification for DNA mismatch repair deficiency assessment
+
+#### 3. Transcriptomics Data
+- **Gene Expression**: RNA-sequencing data processed with robust multi-array average (RMA) normalization
+- **Coverage**: >17,000 protein-coding genes across all cell lines
+- **Quality Control**: Batch effect correction and technical replicate validation
+
+#### 4. Cell Line Annotations
+- **Tissue Origin**: Primary tissue and cancer type classification
+- **Molecular Subtypes**: Cancer-specific molecular classifications (e.g., PAM50 for breast cancer)
+- **Growth Characteristics**: Doubling time, morphology, and culture conditions
+
+## Methodology
+
+### Multi-omics Data Integration Approaches
+
+Our framework implements multiple integration strategies based on established methodologies:
+
+#### Early Integration (Concatenation-based)
+Simple concatenation of normalized feature matrices, following approaches described in:
+- Ritchie, M.D. et al. Methods of integrating data to uncover genotype-phenotype interactions. *Nature Reviews Genetics* 16, 85-97 (2015). [DOI: 10.1038/nrg3868](https://doi.org/10.1038/nrg3868)
+
+#### Intermediate Integration (Kernel-based)
+Kernel fusion methods for non-linear data integration:
+- Lanckriet, G.R. et al. Kernel-based data fusion and its application to protein function prediction in yeast. *Pacific Symposium on Biocomputing* 300-311 (2004). [PMID: 14992512](https://pubmed.ncbi.nlm.nih.gov/14992512/)
+
+#### Late Integration (Ensemble Methods)
+Model-level fusion approaches:
+- Huang, S. et al. More Is Better: Recent Progress in Multi-Omics Data Integration Methods. *Frontiers in Genetics* 8, 84 (2017). [DOI: 10.3389/fgene.2017.00084](https://doi.org/10.3389/fgene.2017.00084)
+
+### Machine Learning Algorithms
+
+#### Regression Models
+- **Ridge Regression**: L2-regularized linear regression for high-dimensional data
+- **Lasso Regression**: L1-regularized regression with automatic feature selection
+- **Elastic Net**: Combined L1/L2 regularization balancing feature selection and grouping
+
+#### Tree-based Methods
+- **Random Forest**: Ensemble of decision trees with bootstrap aggregating
+- **Gradient Boosting**: Sequential weak learner optimization (XGBoost, LightGBM)
+
+#### Neural Networks
+- **Multi-layer Perceptrons**: Deep learning approaches for non-linear pattern recognition
+
+**Key References**:
+- Hastie, T., Tibshirani, R. & Friedman, J. The Elements of Statistical Learning: Data Mining, Inference, and Prediction. (Springer, 2009).
+- Chen, T. & Guestrin, C. XGBoost: A Scalable Tree Boosting System. *Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining* 785-794 (2016). [DOI: 10.1145/2939672.2939785](https://doi.org/10.1145/2939672.2939785)
+
+### Biomarker Discovery Methods
+
+#### Stability Selection
+Robust feature selection method that combines subsampling with regularization:
+- Meinshausen, N. & Bühlmann, P. Stability selection. *Journal of the Royal Statistical Society: Series B* 72, 417-473 (2010). [DOI: 10.1111/j.1467-9868.2010.00740.x](https://doi.org/10.1111/j.1467-9868.2010.00740.x)
+
+#### Statistical Validation
+- Cross-validation for generalization assessment
+- Permutation testing for statistical significance
+- Multiple testing correction (Benjamini-Hochberg FDR)
+
+### Pathway Enrichment Analysis
+
+#### Over-representation Analysis (ORA)
+Hypergeometric test for pathway enrichment:
+- Khatri, P. et al. Ten years of pathway analysis: current approaches and outstanding challenges. *PLoS Computational Biology* 8, e1002375 (2012). [DOI: 10.1371/journal.pcbi.1002375](https://doi.org/10.1371/journal.pcbi.1002375)
+
+#### Gene Set Enrichment Analysis (GSEA)
+Rank-based enrichment analysis:
+- Subramanian, A. et al. Gene set enrichment analysis: a knowledge-based approach for interpreting genome-wide expression profiles. *Proceedings of the National Academy of Sciences* 102, 15545-15550 (2005). [DOI: 10.1073/pnas.0506580102](https://doi.org/10.1073/pnas.0506580102)
+
+#### Pathway Databases
+- **KEGG**: Kyoto Encyclopedia of Genes and Genomes [https://www.genome.jp/kegg/](https://www.genome.jp/kegg/)
+- **Reactome**: Pathway database [https://reactome.org/](https://reactome.org/)
+- **Gene Ontology**: GO Consortium [http://geneontology.org/](http://geneontology.org/)
+- **MSigDB**: Molecular Signatures Database [https://www.gsea-msigdb.org/gsea/msigdb/](https://www.gsea-msigdb.org/gsea/msigdb/)
+
+## Installation and Requirements
+
+### System Requirements
+- Python 3.8+
+- Memory: 8GB RAM minimum, 16GB recommended
+- Storage: 10GB free space for data and results
+
+### Dependencies
+```bash
+# Core scientific computing
+numpy>=1.21.0
+pandas>=1.3.0
+scipy>=1.7.0
+scikit-learn>=1.0.0
+
+# Machine learning extensions
+xgboost>=1.5.0
+lightgbm>=3.3.0
+optuna>=2.10.0
+
+# Visualization
+matplotlib>=3.5.0
+seaborn>=0.11.0
+plotly>=5.0.0
+networkx>=2.6.0
+
+# Bioinformatics
+statsmodels>=0.13.0
+```
+
+### Installation
+```bash
+git clone https://github.com/your-username/Multi-omics_Biomarker_Discovery.git
+cd Multi-omics_Biomarker_Discovery
+pip install -r requirements.txt
+```
+
+## Usage Example
+
+### Complete Workflow
+```python
+from src.data_acquisition.gdsc import GDSCDataAcquisition
+from src.preprocessing.multiomics import MultiOmicsPreprocessor
+from src.modeling import DrugResponsePredictor, MultiDrugResponsePredictor
+from src.biomarker_discovery import BiomarkerDiscovery
+from src.pathway_analysis import PathwayAnalyzer
+
+# Data acquisition
+gdsc_data = GDSCDataAcquisition()
+gdsc_data.download(data_types=["drug_sensitivity", "genomics", "transcriptomics"])
+
+# Preprocessing and integration
+preprocessor = MultiOmicsPreprocessor()
+integrated_features, target_response = preprocessor.integrate_multiomics_for_drug_response(
+    drug_response_matrix, genomics_features, expression_features, target_drug="Erlotinib"
+)
+
+# Drug response prediction
+predictor = DrugResponsePredictor(algorithms=["ridge", "random_forest", "xgboost"])
+predictor.fit(X_train, y_train, optimize_hyperparameters=True)
+
+# Biomarker discovery
+biomarker_discovery = BiomarkerDiscovery(feature_selection_method="stability_selection")
+biomarkers = biomarker_discovery.discover_biomarkers(integrated_features, target_response)
+
+# Pathway analysis
+pathway_analyzer = PathwayAnalyzer()
+pathway_results = pathway_analyzer.run_analysis(biomarker_genes, method="ora")
+```
+
+## Performance Metrics
+
+### Drug Response Prediction
+- **Coefficient of Determination (R²)**: Proportion of variance explained
+- **Root Mean Square Error (RMSE)**: Prediction accuracy in log IC50 units
+- **Pearson/Spearman Correlation**: Linear and rank-based associations
+- **Clinical Classification Accuracy**: Sensitive vs. resistant prediction
+
+### Biomarker Validation
+- **Stability Score**: Frequency of selection across bootstrap samples
+- **Cross-validation Performance**: Generalization assessment
+- **Statistical Significance**: P-values with multiple testing correction
+
+## Applications in Precision Oncology
+
+### Drug Repurposing
+Identification of existing drugs with potential efficacy in new cancer types based on molecular similarity.
+
+### Combination Therapy Design
+Prediction of synergistic drug combinations using multi-target biomarker profiles.
+
+### Resistance Mechanism Discovery
+Elucidation of molecular pathways associated with drug resistance for therapeutic targeting.
+
+### Clinical Translation
+Development of companion diagnostics for patient stratification in clinical trials.
+
+## Contributing
+
+We welcome contributions from the computational biology and bioinformatics community. Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on:
+
+- Code style and documentation standards
+- Testing requirements
+- Pull request procedures
+- Issue reporting guidelines
+
+## Citation
+
+If you use this framework in your research, please cite:
+
+```bibtex
+@software{multiomics_biomarker_discovery,
+  title={Multi-omics Biomarker Discovery for Drug Response Prediction},
+  author={[Your Name]},
+  year={2024},
+  url={https://github.com/your-username/Multi-omics_Biomarker_Discovery},
+  note={Computational framework for integrative pharmacogenomics analysis}
+}
+```
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- **Wellcome Sanger Institute** for maintaining the GDSC database
+- **GDSC Consortium** for providing high-quality multi-omics data
+- **Open source community** for developing the computational tools that make this work possible
+
+## Contact
+
+For questions, collaborations, or technical support:
+- **Email**: [sarah.jamal86@gmail.com]
+
+---
+
+*This framework contributes to the growing field of precision oncology by providing robust computational tools for multi-omics data integration and biomarker discovery in cancer drug response prediction.*

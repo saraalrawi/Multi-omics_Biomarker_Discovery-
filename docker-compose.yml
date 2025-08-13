@@ -1,0 +1,232 @@
+version: '3.8'
+
+services:
+  # Main application service
+  multiomics-app:
+    build:
+      context: .
+      target: development
+    container_name: multiomics-biomarker-app
+    volumes:
+      - ./src:/app/src
+      - ./config:/app/config
+      - ./data:/app/data
+      - ./results:/app/results
+      - ./notebooks:/app/notebooks
+      - ./scripts:/app/scripts
+      - ./tests:/app/tests
+      - ./logs:/app/logs
+    environment:
+      - PYTHONPATH=/app
+      - JUPYTER_ENABLE_LAB=yes
+      - JUPYTER_TOKEN=multiomics2024
+    ports:
+      - "8888:8888"  # Jupyter Lab
+      - "8050:8050"  # Dash application
+      - "8080:8080"  # Alternative web interface
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - multiomics-network
+    restart: unless-stopped
+
+  # PostgreSQL database for metadata and results storage
+  postgres:
+    image: postgres:15-alpine
+    container_name: multiomics-postgres
+    environment:
+      POSTGRES_DB: multiomics
+      POSTGRES_USER: researcher
+      POSTGRES_PASSWORD: secure_password_2024
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deployment/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - multiomics-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U researcher -d multiomics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for caching and session storage
+  redis:
+    image: redis:7-alpine
+    container_name: multiomics-redis
+    command: redis-server --appendonly yes --requirepass redis_password_2024
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - multiomics-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MLflow tracking server
+  mlflow:
+    image: python:3.11-slim
+    container_name: multiomics-mlflow
+    command: >
+      bash -c "
+        pip install mlflow psycopg2-binary &&
+        mlflow server 
+        --backend-store-uri postgresql://researcher:secure_password_2024@postgres:5432/multiomics
+        --default-artifact-root /app/mlruns
+        --host 0.0.0.0
+        --port 5000
+      "
+    volumes:
+      - ./mlruns:/app/mlruns
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+    networks:
+      - multiomics-network
+    restart: unless-stopped
+
+  # Weights & Biases local server (optional)
+  wandb-local:
+    image: wandb/local:latest
+    container_name: multiomics-wandb
+    environment:
+      - MYSQL_ROOT_PASSWORD=wandb_password_2024
+      - MYSQL_DATABASE=wandb_local
+      - MYSQL_USER=wandb
+      - MYSQL_PASSWORD=wandb_password_2024
+    volumes:
+      - wandb_data:/vol
+    ports:
+      - "8080:8080"
+    networks:
+      - multiomics-network
+    restart: unless-stopped
+    profiles:
+      - wandb
+
+  # Documentation server
+  docs:
+    build:
+      context: .
+      target: docs
+    container_name: multiomics-docs
+    volumes:
+      - ./docs:/app/docs
+    ports:
+      - "8000:8000"
+    networks:
+      - multiomics-network
+    restart: unless-stopped
+    profiles:
+      - docs
+
+  # Testing service
+  test:
+    build:
+      context: .
+      target: testing
+    container_name: multiomics-test
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./test-results:/app/test-results
+    environment:
+      - PYTHONPATH=/app
+    networks:
+      - multiomics-network
+    profiles:
+      - test
+
+  # Production service
+  production:
+    build:
+      context: .
+      target: production
+    container_name: multiomics-production
+    volumes:
+      - ./data:/app/data
+      - ./results:/app/results
+      - ./logs:/app/logs
+    environment:
+      - PYTHONPATH=/app
+      - ENVIRONMENT=production
+    ports:
+      - "8050:8050"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - multiomics-network
+    restart: unless-stopped
+    profiles:
+      - production
+
+  # Monitoring with Prometheus (optional)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: multiomics-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./deployment/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - multiomics-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  # Grafana for visualization (optional)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: multiomics-grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=grafana_password_2024
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deployment/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./deployment/grafana/datasources:/etc/grafana/provisioning/datasources
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - multiomics-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  wandb_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  multiomics-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

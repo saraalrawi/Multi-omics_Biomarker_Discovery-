@@ -1,0 +1,8 @@
+biomarker_discovery
+data_acquisition
+integration
+modeling
+pathway_analysis
+preprocessing
+utils
+visualization
